@@ -1,0 +1,64 @@
+<docs>
+[TODO: Gives the PPI:s for a given protein]
+</docs>
+
+<config lang="json">
+{
+  "name": "Get PPI:s",
+  "type": "web-worker",
+  "tags": [],
+  "ui": "",
+  "version": "0.1.0",
+  "cover": "",
+  "description": "[TODO: Gives the PPI:s for a given protein]",
+  "icon": "extension",
+  "inputs": null,
+  "outputs": null,
+  "api_version": "0.1.8",
+  "env": "",
+  "permissions": [],
+  "requirements": [],
+  "dependencies": []
+}
+</config>
+
+<script lang="javascript">
+class ImJoyPlugin {
+  async setup() {
+    api.log('initialized')
+}
+
+async run(ctx) {
+    fetch('https://string-db.org/api/tsv/interaction_partners?identifiers=TP53&limit=10')
+        .then(response => response.json())
+        .then(data => console.log(data))
+};
+
+let my_genes = "9606.ENSP00000000233";
+
+requestedurl = 'https://string-db.org/api/tsv/interaction_partners?identifiers=TP53&limit=10'
+
+var parameters = {
+    "identifiers": "%0d".join(my_genes),
+    "species": 9606,
+    "limit": 5,
+    "caller_identity": "in_development"
+};
+
+response = $.post(requested_url, data = parameters);
+print(response);
+
+for (const line in response.text.strip().split("\n")) {
+    l = line.strip().split("\t")
+    query_ensp = l[0]
+    query_name = l[2]
+    partner_ensp = l[1]
+    partner_name = l[3]
+    combined_score = l[5];
+}
+
+print("\t".join([query_ensp, query_name, partner_name, combined_score]))
+
+}
+    <
+    /script> 
