@@ -1,0 +1,76 @@
+<docs lang="markdown">
+[TODO: write documentation for this plugin.]
+</docs>
+
+<config lang="json">
+{
+  "name": "new getter",
+  "type": "window",
+  "tags": [],
+  "ui": "",
+  "version": "0.1.0",
+  "cover": "",
+  "description": "[TODO: describe this plugin with one sentence.]",
+  "icon": "extension",
+  "inputs": null,
+  "outputs": null,
+  "api_version": "0.1.8",
+  "env": "",
+  "permissions": [],
+  "requirements": [],
+  "dependencies": [],
+  "defaults": {"w": 20, "h": 10}
+}
+</config>
+
+<script lang="javascript">
+class ImJoyPlugin {
+  async setup() {
+    api.log('initialized')
+  }
+
+  async run(ctx) {
+    fetch('https://string-db.org/api/json/interaction_partners?identifiers=TP53%0d&limit=1')
+    .then(response => response.json())
+    .then(data => {
+      const bestMatch=JSON.stringify(data[0]);
+      const prot=document.querySelector('.items');
+        prot.firstElementChild.textContent=bestMatch.substring(117, 123);
+        console.log(data)
+    });
+        var parameters = {
+          "species": 9606,
+          "limit": 5,
+          "caller_identity": "in_development"
+        };
+        
+        
+
+        
+  }
+
+
+
+
+
+}
+
+
+
+api.export(new ImJoyPlugin())
+</script>
+
+<window lang="html">
+  <div>
+    <p>
+     Your best match is
+     <ul class="items"> 
+        <li class="item">item1</li>
+     </ul>
+    </p>
+  </div>
+</window>
+
+<style lang="css">
+
+</style>
