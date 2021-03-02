@@ -30,13 +30,19 @@ class ImJoyPlugin {
   }
 
   async run(ctx) {
-    fetch('https://string-db.org/api/json/interaction_partners?identifiers=TP53%0d&limit=1')
+    fetch('https://string-db.org/api/json/interaction_partners?identifiers=CDK2%0d&limit=10')
     .then(response => response.json())
     .then(data => {
-      const bestMatch=JSON.stringify(data[0]);
+       console.log(data);
+      var bestMatchString=JSON.stringify(data);
+      console.log(bestMatchString);
+      let bestMatchStringTwo=bestMatchString.replace("[{","{");
+      let bestMatchStringThree=bestMatchStringTwo.replace("}]","}");
+      console.log(bestMatchStringThree)
+      var bestMatchObject=JSON.parse(bestMatchStringThree);
       const prot=document.querySelector('.items');
-        prot.firstElementChild.textContent=bestMatch.substring(117, 123);
-        console.log(data)
+        prot.firstElementChild.textContent=bestMatchObject.preferredName_B;
+       
     });
         var parameters = {
           "species": 9606,
@@ -66,6 +72,15 @@ api.export(new ImJoyPlugin())
      Your best match is
      <ul class="items"> 
         <li class="item">item1</li>
+        <li class="item">item2</li>
+        <li class="item">item3</li>
+        <li class="item">item4</li>
+        <li class="item">item5</li>
+        <li class="item">item6</li>
+        <li class="item">item7</li>
+        <li class="item">item8</li>
+        <li class="item">item9</li>
+        <li class="item">item10</li>
      </ul>
     </p>
   </div>
