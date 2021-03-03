@@ -29,8 +29,13 @@ class ImJoyPlugin {
     api.log('initialized')
   }
 
+ 
+
   async run(ctx) {
-    fetch('https://string-db.org/api/json/interaction_partners?identifiers=EGFR%0d&limit=10')
+    const protein = await api.prompt("What is your protein?");
+    const interactions = await api.prompt("How many interactions?");
+    const url= await `https://string-db.org/api/json/interaction_partners?identifiers=${protein}%0d&limit=${interactions}`;
+    await fetch(url)
     .then(response => response.json())
     .then(data => {
        console.log(data);
@@ -103,3 +108,4 @@ api.export(new ImJoyPlugin())
 <style lang="css">
 
 </style>
+
