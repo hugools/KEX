@@ -1,0 +1,277 @@
+<docs lang="markdown">
+    [TODO: write documentation for this plugin.]
+</docs>
+
+<config lang="json">
+    { "name": "Get PPIN", "type": "window", "tags": [], "ui": "", "version": "0.1.0", "cover": "", "description": "[TODO: describe this plugin with one sentence.]", "icon": "extension", "inputs": null, "outputs": null, "api_version": "0.1.8", "env": "", "permissions": [], "requirements": ["https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.18.1/cytoscape.umd.js", "http://localhost:8080/cytoscape-cise.js"], "dependencies": [], "defaults": {"w": 20, "h": 10} }
+</config>
+
+<script lang="javascript">
+    class ImJoyPlugin {
+        async setup(go) {
+            api.log('initialized')
+            document.getElementById("searchButton").addEventListener("click", go);   
+        }
+
+        async run(ctx) {
+            var protein = "TP53" //document.getElementById("searchProtein").value
+            var interactions = "5" //document.getElementById("interactions#").value
+            var url = `https://string-db.org/api/json/interaction_partners?identifiers=${protein}%0d&limit=${interactions}`;
+            //Code to translate from gene name to id
+            // var img= image link merged with correct id
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    var matches = [];
+                    var scores = []
+                    for (i = 0; i < data.length; i++) {
+                        var bestMatchString = JSON.stringify(data[i]);
+                        let bestMatchStringTwo = bestMatchString.replace("[{", "{");
+                        let bestMatchStringThree = bestMatchStringTwo.replace("}]", "}");
+                        var bestMatchObject = JSON.parse(bestMatchStringThree);
+                        matches.push(bestMatchObject.preferredName_B);
+                        scores.push(bestMatchObject.score);
+                    }
+                    var elemts = [{
+                        data: {
+                            id: protein
+                        }
+                    }];
+                    for (i = 0; i < matches.length; i++) {
+                        elemts.push({
+                            data: {
+                                id: matches[i]
+                            }
+                        });
+                        elemts.push({
+                            data: {
+                                id: i + " " + scores[i],
+                                source: protein,
+                                target: matches[i]
+                            }
+                        })
+                    }
+
+
+                    var cy = cytoscape({
+                        container: document.getElementById('cy'),
+                        elements: elemts,
+                        layout: {
+                            name: 'cise'
+                        },
+
+                        style: [{
+                            selector: 'node',
+                            style: {
+                                'background-color': 'grey',
+                                label: 'data(id)'
+                            }
+                        }]
+
+                    });
+
+                    var collect = cy.collection()
+                    var list = [];
+                    cy.edges(function(ele, i) {
+                        var str = ele['_private']['data']['id'];
+                        var value = str.substring(str.length - 5, str.length);
+                        collect = collect.union(ele);
+                        var edg = collect[collect.length - 1]['_private']['data']['id'];
+                        var ed = parseFloat(edg.substring(edg.length, edg.length - 5))
+                        list.push(ed);
+                    });
+
+                    for (i = 0; i < list.length; i++) {
+                        if (list[i] > 0.998) {
+                            collect[i].style('line-color', 'red')
+                        } else if (list[i] < 0.999 && list[i] > 0.997) {
+                            collect[i].style('line-color', 'orange')
+                        } else if (list[i] < 0.998 && list[i] > 0.996) {
+                            collect[i].style('line-color', 'yellow')
+                        } else if (list[i] < 0.997 && list[i] > 0.995) {
+                            collect[i].style('line-color', 'green')
+                        } else if (list[i] < 0.996 && list[i] > 0.994) {
+                            collect[i].style('line-color', 'blue')
+                        } else {
+                            collect[i].style('line-color', 'grey')
+                        }
+                    }
+
+
+
+                    cy.edges().on('click', function(e) {
+                        var str = e.target['_private']['data']['id'];
+                        console.log(e.target['_private'])
+                        var message = str.substring(str.length - 5, str.length);
+                        console.log(message)
+                        document.getElementById("interactionStrength").innerHTML = "The protein interaction strength is " + message + " between " + e.target['_private']['data']['source'] + " and " + e.target['_private']['data']['target'];
+                    });
+
+                    var collection = cy.collection();
+                    cy.nodes().on('click', function(e) {
+                        var clickedNode = e.target;
+                        collection = collection.union(clickedNode);
+                        console.log(collection[collection.length - 1]['_private']['data']['id'])
+                        update(collection);
+                    });
+                
+
+                    function update(x) {
+                        var protein = x[x.length - 1]['_private']['data']['id'];
+                        console.log(protein)
+                        var url = `https://string-db.org/api/json/interaction_partners?identifiers=${protein}%0d&limit=${interactions}`;
+                        fetch(url)
+                            .then(response => response.json())
+                            .then(data => {
+                                var matches = [];
+                                var scores = [];
+                                for (i = 0; i < data.length; i++) {
+                                    var bestMatchString = JSON.stringify(data[i]);
+                                    let bestMatchStringTwo = bestMatchString.replace("[{", "{");
+                                    let bestMatchStringThree = bestMatchStringTwo.replace("}]", "}");
+                                    var bestMatchObject = JSON.parse(bestMatchStringThree);
+                                    matches.push(bestMatchObject.preferredName_B);
+                                    scores.push(bestMatchObject.score);
+                                }
+
+                                var para = document.createElement("div");
+                                var node = document.createElement("div");
+                                para.appendChild(node);
+                                var element = document.getElementById("cy");
+                                element.appendChild(para);
+
+                                for (i = 0; i < matches.length; i++) {
+                                    elemts.push({
+                                        data: {
+                                            id: matches[i]
+                                        }
+                                    });
+                                    elemts.push({
+                                        data: {
+                                            id: elemts.length + " " + scores[i],
+                                            source: protein,
+                                            target: matches[i]
+                                        }
+                                    })
+                                }
+                                var cy = cytoscape({
+                                    container: document.getElementById('cy'),
+                                    elements: elemts,
+                                    layout: {
+                                        name: 'cise'
+                                    },
+
+                                    style: [{
+                                        selector: 'node',
+                                        style: {
+                                            'background-color': 'grey',
+                                            label: 'data(id)'
+                                        }
+                                    }]
+
+                                });
+
+                                var collect = cy.collection()
+                                var list = [];
+                                cy.edges(function(ele, i) {
+                                    var str = ele['_private']['data']['id'];
+                                    var value = str.substring(str.length - 5, str.length);
+                                    collect = collect.union(ele);
+                                    var edg = collect[collect.length - 1]['_private']['data']['id'];
+                                    var ed = parseFloat(edg.substring(edg.length, edg.length - 5))
+                                    list.push(ed);
+                                });
+
+                                for (i = 0; i < list.length; i++) {
+                                    if (list[i] > 0.998) {
+                                        collect[i].style('line-color', 'red')
+                                    } else if (list[i] < 0.999 && list[i] > 0.997) {
+                                        collect[i].style('line-color', 'orange')
+                                    } else if (list[i] < 0.998 && list[i] > 0.996) {
+                                        collect[i].style('line-color', 'yellow')
+                                    } else if (list[i] < 0.997 && list[i] > 0.995) {
+                                        collect[i].style('line-color', 'green')
+                                    } else if (list[i] < 0.996 && list[i] > 0.994) {
+                                        collect[i].style('line-color', 'blue')
+                                    } else {
+                                        collect[i].style('line-color', 'grey')
+                                    }
+                                }
+
+                                cy.edges().on('click', function(e) {
+                                    var str = e.target['_private']['data']['id'];
+                                    console.log(e.target['_private'])
+                                    var message = str.substring(str.length - 5, str.length);
+                                    console.log(message)
+                                    document.getElementById("interactionStrength").innerHTML = "The protein interaction strength is " + message + " between " + e.target['_private']['data']['source'] + " and " + e.target['_private']['data']['target'];
+                                });
+
+                                var collection = cy.collection();
+                                cy.nodes().on('click', function(e) {
+                                    var clickedNode = e.target;
+                                    collection = collection.union(clickedNode);
+                                    console.log(collection[collection.length - 1]['_private']['data']['id'])
+                                    update(collection);
+                                });
+
+                            })
+                    }
+
+
+                });
+            var parameters = {
+                "species": 9606,
+                "limit": 5,
+                "caller_identity": "in_development"
+            };
+
+
+          
+        }
+    }
+    api.export(new ImJoyPlugin())
+</script>
+
+<style>
+    #cy {
+        width: 500px;
+        height: 500px;
+        position: absolute;
+        top: 130px;
+        left: 0px;
+        right: 500px
+    }
+    #image-container{
+    width: 100px;
+    height: 100px;
+    position: absolute;
+    top: 130px;
+    left: 500px;
+    }
+</style>
+
+<window>
+    <div class="hero bg-gray">
+        <header class="navbar">
+            <section class="navbar-section">
+                <a class="navbar-brand mr-2">PPI Network</a>
+            </section>
+            <section class="navbar-section">
+                <div class="input-group input-inline">
+                    <input class="form-input" type="text" placeholder="Protein" id="searchProtein">
+                    <input class="form-input" type="text" placeholder="# interaction partners" id="interactions#">
+                    <button class="btn btn-primary input-group-btn" id="searchButton">Search</button>
+                </div>
+            </section>
+        </header>
+        <div class="hero-body">
+            <h4 font-family="arial" , id="interactionStrength"> </h4>
+            <p> Color key to interaction strength:<span style="color: red"> 0.999</span><span style="color: orange"> 0.998</span><span style="color: yellow"> 0.997</span><span style="color: green"> 0.996</span><span style="color: blue"> 0.995</span><span style="color: grey"> Below 0.995</span></p>
+        </div>
+        <div id="cy">
+        </div>
+        <div id="image-container">
+          <img src="https://images.proteinatlas.org/30741/800_A6_1_blue_red_green.jpg", width="400", height="500">
+        </div>
+    </div>
+</window>
